@@ -1,12 +1,13 @@
+use actix_files;
 use actix_multipart::form::{tempfile::TempFile, MultipartForm};
 use actix_web::{
     post,
     web::{self},
     App, HttpResponse, HttpServer, Responder,
 };
-use actix_files as fs;
 use image::ImageFormat;
 use mime;
+use std::fs;
 
 use face_detection_server::{
     config::Config, image_queue::ImageQueue, queue_processor::process_queue_task,
@@ -124,12 +125,19 @@ async fn main() -> std::io::Result<()> {
         queue: queue.clone(),
     });
 
+    let _ = fs::create_dir("./results");
+
     actix_rt::spawn(
         async move { process_queue_task(ultra_predictor.clone(), queue.clone()).await },
     );
 
-    HttpServer::new(move || App::new().app_data(app_state.clone()).service(add_to_queue).service(fs::Files::new("/result", "./results")))
-        .bind(("127.0.0.1", 8082))?
-        .run()
-        .await
+    HttpServer::new(move || {
+        App::new()
+            .app_data(app_state.clone())
+            .service(add_to_queue)
+            .service(actix_files::Files::new("/result", "./results"))
+    })
+    .bind(("127.0.0.1", 8082))?
+    .run()
+    .await
 }

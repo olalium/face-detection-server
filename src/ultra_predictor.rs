@@ -119,8 +119,6 @@ impl UltraPredictor {
             })
             .collect();
 
-        println!("bbox: {}", bboxes_with_confidences.len());
-
         bboxes_with_confidences.sort_by(|a, b| a.1.partial_cmp(b.1).unwrap());
         let selected_bboxes_with_confidences =
             non_maximum_suppression(bboxes_with_confidences, MAX_IOU).to_vec();
